@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">CameraPlayback</string>
+    <string name="hello">Hello</string>
+    <string name="room_name">Room Name</string>
+    <string name="name_camera">Name Camera</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="play">Play</string>
+</resources>

@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <bool name="isTablet">false</bool>
+
+    <attr name="state_internet_normal" format="boolean" />
+    <attr name="state_internet_online" format="boolean" />
+    <attr name="state_internet_lost" format="boolean" />
+    <attr name="state_wifi_device_lost" format="boolean" />
+    <attr name="state_downloading" format="boolean" />
+    <attr name="state_downloaded" format="boolean" />
+
+    <attr name="wifi_connected_good" format="boolean" />
+    <attr name="wifi_connected_normal" format="boolean" />
+    <attr name="wifi_connected_week" format="boolean" />
+    <attr name="wifi_connected_slow" format="boolean" />
+    <attr name="wifi_connected_very_week" format="boolean" />
+    
+    // Mqtt state
+    <attr name="mqtt_state_connected" format="boolean"/>
+    <attr name="mqtt_state_connecting" format="boolean"/>
+    <attr name="mqtt_state_disconnected" format="boolean"/>
+
+    <!-- TODO: Uncomment when use
+    <declare-styleable name="CustomEditText">
+        <attr name="hint" format="string" />
+        <attr name="maxLength" format="integer" />
+        <attr name="text" format="string" />
+        <attr name="android:inputType" />
+        <attr name="android:imeOptions" />
+    </declare-styleable>
+    -->
+    <declare-styleable name="CustomEditText">
+        <attr name="hintText" format="string" />
+        <attr name="actionIme" format="enum">
+            <enum name="normal" value="0" />
+            <enum name="actionUnspecified" value="0" />
+            <enum name="actionNone" value="1" />
+            <enum name="actionGo" value="2" />
+            <enum name="actionSearch" value="3" />
+            <enum name="actionSend" value="4" />
+            <enum name="actionDone" value="5" />
+            <enum name="actionNext" value="6" />
+            <enum name="actionPrevious" value="7" />
+        </attr>
+        <attr name="inputType" format="enum">
+            <enum name="normal" value="0" />
+            <enum name="email" value="1" />
+            <enum name="password" value="2" />
+            <enum name="phone" value="3" />
+        </attr>
+        <attr name="showIconTogglePassword" format="boolean" />
+        <attr name="iconStart" format="reference" />
+        <attr name="iconEnd" format="reference" />
+        <attr name="colorIconEnd" format="color" />
+        <attr name="enable" format="boolean" />
+        <attr name="textStart" format="string" />
+    </declare-styleable>
+
+    <declare-styleable name="CustomMainToolbar">
+        <attr name="title" format="string" />
+    </declare-styleable>
+
+    <declare-styleable name="OHIRRemoteButton">
+        <attr name="state_command" format="boolean" />
+    </declare-styleable>
+
+    <declare-styleable name="CustomNormalToolbar">
+        <attr name="normalTitle" format="string" />
+    </declare-styleable>
+    <!-- TODO: Uncomment when use
+        <declare-styleable name="CustomToolbar">
+            <attr name="titleToolbar" format="string" />
+            <attr name="enableBackButton" format="boolean" />
+            <attr name="iconFirstRight" format="reference" />
+            <attr name="iconSecondRight" format="reference" />
+        </declare-styleable>
+        -->
+
+    <declare-styleable name="CustomToolbar">
+        <attr name="titleToolbar" format="string" />
+        <attr name="enableBackButton" format="boolean" />
+        <attr name="iconLeft" format="reference" />
+        <attr name="iconFirstRight" format="reference" />
+        <attr name="iconSecondRight" format="reference" />
+        <attr name="colorIcon" format="reference" />
+        <attr name="textRight" format="string" />
+        <attr name="textLeft" format="string" />
+        <attr name="titleGravity">
+            <flag name="start" value="0x00800003" />
+            <flag name="center" value="0x11" />
+        </attr>
+    </declare-styleable>
+
+    <declare-styleable name="CustomToolbarWithSmallTitle">
+        <attr name="bigTitleToolbar" format="string" />
+        <attr name="smallTitleToolbar" format="string" />
+        <attr name="setBackButton" format="boolean" />
+    </declare-styleable>
+
+    <declare-styleable name="BottomSelectedBar">
+        <attr name="typeBottom" format="enum">
+            <enum name="Devices" value="0" />
+            <enum name="Scene" value="1" />
+            <enum name="Notification" value="2" />
+            <enum name="Auto" value="3" />
+            <enum name="Detail" value="4" />
+        </attr>
+
+    </declare-styleable>
+
+    <declare-styleable name="ZoomableTextureView">
+        <attr name="minScale" format="float" />
+        <attr name="maxScale" format="float" />
+    </declare-styleable>
+
+    <!--
+    - item_title : Title of switch
+    - item_description : Description of switch
+    - mode : textMode = 0 ( only text is showing )
+             switchMode = 1 ( switch with checkedChanges RxBinding )
+             vnptSwitchMode = 2 ( switch with clicks RxBinding )
+    - enable_arrow: only arrow is showing
+    -->
+    <declare-styleable name="ItemCameraSettings">
+        <attr name="item_title" format="string" />
+        <attr name="item_description" format="string" />
+        <attr name="mode" format="enum">
+            <enum name="textMode" value="0" />
+            <enum name="switchMode" value="1" />
+            <enum name="vnptSwitchMode" value="2" />
+            <enum name="onTouchSwitch" value="3" />
+        </attr>
+        <attr name="enable_arrow" format="boolean" />
+        <attr name="enable_icon_description" format="boolean" />
+    </declare-styleable>
+
+    <declare-styleable name="CircleProgressBar">
+        <attr name="min" format="integer" />
+        <attr name="max" format="integer" />
+        <attr name="progress" format="integer" />
+        <attr name="progressbarColor" format="color" />
+        <attr name="progressBarThickness" format="dimension" />
+        <attr name="progressBarBackgroundThickness" format="dimension" />
+    </declare-styleable>
+
+    <declare-styleable name="CustomDialogHMS" tools:ignore="ResourceName">
+        <attr name="custom_normal_color" format="color" />
+        <attr name="custom_selected_color" format="color" />
+        <attr name="custom_hours" format="integer" />
+        <attr name="custom_minutes" format="integer" />
+        <attr name="custom_seconds" format="integer" />
+        <attr name="custom_auto_step" format="boolean" />
+        <attr name="custom_show_hours" format="boolean" />
+        <attr name="custom_show_minutes" format="boolean" />
+        <attr name="custom_show_seconds" format="boolean" />
+        <attr name="custom_enable_99_hours" format="boolean" />
+    </declare-styleable>
+
+    <declare-styleable name="PalletColorView">
+        <attr name="radius" format="dimension" />
+        <attr name="lockPointerInBounds" format="boolean" />
+    </declare-styleable>
+
+    <declare-styleable name="ScalableScaleBar">
+        <attr name="keyTickHeight" format="dimension|reference" />
+        <attr name="normalTickRatio" format="float" />
+        <attr name="cursorPosition" format="float" />
+        <attr name="baselinePosition" format="float" />
+        <attr name="tickColor" format="color|reference" />
+        <attr name="showCursorLine" format="boolean" />
+        <attr name="showTickValue" format="boolean" />
+        <attr name="cursorLineColor" format="color|reference" />
+        <attr name="maxScaleValueSize" format="color|reference" />
+    </declare-styleable>
+
+    <declare-styleable name="VideoTimeBar">
+        <attr name="tickValueColor" format="color|reference" />
+        <attr name="tickValueSize" format="dimension|reference" />
+        <attr name="cursorBackgroudColor" format="color|reference" />
+        <attr name="cursorValueSize" format="dimension|reference" />
+        <attr name="colorScaleBackgroud" format="color|reference" />
+    </declare-styleable>
+    <declare-styleable name="CustomSwitchResolution">
+        <attr name="textStartSwitch" format="string" />
+        <attr name="textEndSwitch" format="string" />
+        <attr name="colorChecked" format="color" />
+    </declare-styleable>
+    <declare-styleable name="CustomDeviceIrInfo">
+        <attr name="textInfoTitle" format="string" />
+        <attr name="buttonEnable" format="boolean" />
+        <attr name="icArrowRightVisibility">
+            <enum name="visible" value="0" />
+            <enum name="invisible" value="4" />
+            <enum name="gone" value="8" />
+        </attr>
+    </declare-styleable>
+
+    <declare-styleable name="JoystickView">
+
+        <attr name="JV_buttonImage" format="reference" />
+        <attr name="JV_buttonColor" format="color" />
+        <attr name="JV_borderColor" format="color" />
+        <attr name="JV_borderAlpha" format="integer" />
+        <attr name="JV_backgroundColor" format="color" />
+        <attr name="JV_borderWidth" format="dimension" />
+        <attr name="JV_fixedCenter" format="boolean" />
+        <attr name="JV_autoReCenterButton" format="boolean" />
+        <attr name="JV_buttonStickToBorder" format="boolean" />
+        <attr name="JV_enabled" format="boolean" />
+        <attr name="JV_buttonSizeRatio" format="fraction" />
+        <attr name="JV_backgroundSizeRatio" format="fraction" />
+
+        <attr name="JV_buttonDirection">
+            <flag name="horizontal" value="-1" />
+            <flag name="both" value="0" />
+            <flag name="vertical" value="1" />
+        </attr>
+
+    </declare-styleable>
+
+</resources>
