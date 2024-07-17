@@ -1,6 +1,8 @@
 package com.example.cameraplayback.ui.view
 
+import android.content.pm.ActivityInfo
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -35,6 +37,9 @@ class PlaybackCameraFragment : Fragment(),
     private val binding get() = _binding!!
     private val mainViewModel: MainViewModel by viewModels()
     private var timeStamp = 1720823164000
+
+    private var onTouchTimeBar: Boolean = false
+
 
 
 
@@ -98,6 +103,20 @@ class PlaybackCameraFragment : Fragment(),
             }
         }
     }
+
+//    /**
+//     * Chọn ngày để play
+//     */
+//    private fun setSelectDayToPlay(midDaySelected: Long) {
+//        dayAdapter.apply {
+//            setCheckedItem(midDaySelected)
+//            setTmpSelectDay(midDaySelected)
+//        }
+//        focusSelectedDay()
+//        setUpPeriodTimeForTimeline(midDaySelected)
+//        binding.timeLinePlayback.cursorValue = midDaySelected
+//        viewModel.selectDayToPlay(midDaySelected, Constant.PlayPlaybackFileEvent.SELECT_DAY)
+//    }
 
 
 
@@ -297,12 +316,70 @@ class PlaybackCameraFragment : Fragment(),
     }
 
     override fun onStart(cursorValue: Long) {
+        Log.d("ducpa", "onStart: $onTouchTimeBar")
+        if (!onTouchTimeBar) {
+            onTouchTimeBar = true
+            mainViewModel.seekTimePlaybackFile()
+        }
+
+        startSeekVideo.cancel()
     }
 
     override fun onMoving(cursorValue: Long) {
     }
 
     override fun onEnd(cursorValue: Long) {
+        Log.d("ducpa", "onEnd: $onTouchTimeBar")
+        if (onTouchTimeBar) {
+            mainViewModel.setTimeSeekValue(cursorValue)
+            startCountdownSeekVideo()
+        }
+    }
+
+    private fun startCountdownSeekVideo() {
+        startSeekVideo.cancel()
+        startSeekVideo.start()
+    }
+
+    // Countdowntimer để bắt đầu tua video
+    // Khi kéo thanh timeline, sau khi nhả tay ra, delay 1s sau đó mới bắt đầu gọi lệnh seek xuống cam
+    private val startSeekVideo = object : CountDownTimer(1000, 1000) {
+        override fun onTick(p0: Long) {}
+
+        override fun onFinish() {
+            onTouchTimeBar = false
+            updateViewStartSeekVideoPlayback()
+            mainViewModel.startSeekVideo()
+        }
+    }
+
+    /**
+     * Cập nhật view khi bắt đầu quá trình seek video playback
+     */
+    private fun updateViewStartSeekVideoPlayback() {
+        updateTimebarView(false)
+    }
+
+    /**
+     * Cập nhật view của thanh giời gian (timeline), thanh chọn ngày, textview chọn ngày xem playback
+     */
+    private fun updateTimebarView(enable: Boolean) {
+        val alpha: Float = if (enable) 1F else 0.3F
+
+        binding.apply {
+            timeLinePlayback.apply {
+                setEnableView(alpha, enable)
+                setTouchable(enable)
+            }
+
+//            dayAdapter.setPickableDay(enable)
+        }
+    }
+
+    fun View.setEnableView(alphaValue: Float, isEnable: Boolean) {
+        isEnabled = isEnable
+        alpha = if (!isEnable) alphaValue else 1.0F
+        isClickable = isEnable
     }
 }
 

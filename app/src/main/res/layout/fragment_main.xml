@@ -30,26 +30,39 @@
             android:id="@+id/tv_name_camera"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="10dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="4dp"
+            android:text="------"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/iv_camera" />
+        <TextView
+            android:id="@+id/tv_pass"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="------"
             android:textColor="@color/black"
             android:textSize="18sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/iv_camera" />
+            app:layout_constraintTop_toBottomOf="@id/tv_name_camera" />
 
-        <TextView
+        <Button
             android:id="@+id/tv_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="10dp"
+            android:background="@drawable/boder_status"
             android:text="------"
-            android:textColor="@color/green_light"
-            android:textSize="20sp"
+            android:textColor="@color/white"
+            android:textSize="10sp"
             android:textStyle="bold"
+            android:layout_marginTop="50dp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_name_camera" />
+            app:layout_constraintStart_toEndOf="@+id/iv_camera"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <Button
             android:id="@+id/playback"

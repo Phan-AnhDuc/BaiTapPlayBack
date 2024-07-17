@@ -26,6 +26,12 @@ interface VNTTCamManager {
      */
     fun getCurrentFlipCamera()
 
+
+    /**
+     * Stop playback
+     */
+    fun stopPlayback(): Single<Int>
+
     /**
      * Receive audio
      */
@@ -55,6 +61,8 @@ interface VNTTCamManager {
     fun observeCommandSet(): PublishSubject<Pair<Constants.Command?, Int>>
 
     fun observePlaybackVideoStream(): PublishSubject<VideoStreamData>
+
+    fun observeTimestampPlayback(): PublishSubject<Long>
 
     fun observeVideoQualityRecord(): PublishSubject<Int>
 

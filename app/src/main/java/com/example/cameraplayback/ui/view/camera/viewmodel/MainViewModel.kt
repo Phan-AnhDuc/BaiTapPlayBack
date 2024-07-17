@@ -19,9 +19,11 @@ import com.example.cameraplayback.resource.ResourcesService
 import com.example.cameraplayback.ui.theme.ColorData
 import com.example.cameraplayback.utils.Constant
 import com.example.cameraplayback.utils.CryptoAES.Companion.decrypt
+import com.example.cameraplayback.utils.extension.getEndOfDay
 import com.vnpttech.ipcamera.Constants
 import com.vnpttech.model.DeviceInfo
 import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.PublishSubject
@@ -45,6 +47,8 @@ class MainViewModel : ViewModel()  {
     private var devicesCamera: Device? = null
     private var seekTimeValue: Long = 0
     private var idCam = 0
+
+    private var isNextFile: Boolean = false
 
     private var uidCam = "VNTTA-017631-MVEGE"
 
@@ -129,6 +133,14 @@ class MainViewModel : ViewModel()  {
     private val _cursorTimebar: MutableLiveData<Pair<Boolean, Long>> by lazy { MutableLiveData() }
 
     open var isInitialized: Boolean = false
+
+    private var isPlayLastFileComplete = false
+
+    private var isPaused: Boolean = false
+
+    private val _dateList: MutableLiveData<ArrayList<Long>> by lazy { MutableLiveData() }
+
+    private var isDay: Boolean = true
 
     fun setDataCamera(device: Device) {
         devicesCamera = device
@@ -299,7 +311,7 @@ class MainViewModel : ViewModel()  {
                         // Nếu bắt đầu có data của video trả về và không phải là sự kiện seek video
                         // ==> Set playback state là playing
                         hasDataVideo = true
-//                        isPaused = false
+                        isPaused = false
 //                        isReconnect = false
 
                         getQualityVideo(videoData.widthData, videoData.heightData)
@@ -327,40 +339,40 @@ class MainViewModel : ViewModel()  {
                 }
         }
 
-//        if (disposableTimeStamp == null) {
-//            disposableTimeStamp = vnttCamManager.observePlaybackVideoStream()
-//                .subscribeOn(schedulerProvider.newThread())
-//                .observeOn(schedulerProvider.newThread())
-//                .subscribe { offset ->
-//                    if (!startSeekEvent) {
-//                        currentFilePlay?.let { file ->
-//                            val timestamp = convertSecondToMillis(file.timestamp)
-//
-//                            if (ceil((offset / 1000.0)) >= file.duration) {
-//                                // Đã play hết file hiện tại ==> Next sang file tiếp theo
-//                                processNextFile()
-//                            }
-//
-//                            _cursorTimebar.postValue(Pair(true, timestamp + offset))
-//                        }
-//                    }
-//                }
-//        }
-//
-//        disposableVideoStream?.let {
-//            compositeDisposable.delete(it)
-//            compositeDisposable.add(it)
-//        }
-//
-//        disposableAudioStream?.let {
-//            compositeDisposable.delete(it)
-//            compositeDisposable.add(it)
-//        }
-//
-//        disposableTimeStamp?.let {
-//            compositeDisposable.delete(it)
-//            compositeDisposable.add(it)
-//        }
+        if (disposableTimeStamp == null) {
+            disposableTimeStamp = vnttCamManager.observeTimestampPlayback()
+                .subscribeOn(schedulerProvider.newThread())
+                .observeOn(schedulerProvider.newThread())
+                .subscribe { offset ->
+                    if (!startSeekEvent) {
+                        currentFilePlay?.let { file ->
+                            val timestamp = convertSecondToMillis(file.timestamp)
+
+                            if (ceil((offset / 1000.0)) >= file.duration) {
+                                // Đã play hết file hiện tại ==> Next sang file tiếp theo
+                                processNextFile()
+                            }
+
+                            _cursorTimebar.postValue(Pair(true, timestamp + offset))
+                        }
+                    }
+                }
+        }
+
+        disposableVideoStream?.let {
+            compositeDisposable.delete(it)
+            compositeDisposable.add(it)
+        }
+
+        disposableAudioStream?.let {
+            compositeDisposable.delete(it)
+            compositeDisposable.add(it)
+        }
+
+        disposableTimeStamp?.let {
+            compositeDisposable.delete(it)
+            compositeDisposable.add(it)
+        }
     }
 
     fun convertSecondToMillis(time: Int): Long {
@@ -609,7 +621,9 @@ class MainViewModel : ViewModel()  {
                     setPlaybackStateUI(Constant.PlaybackSdCardStateUI.EMPTY_FILE)
                 }
                 Constant.PlayPlaybackFileEvent.FIRST_TIME -> {}
-                Constant.PlayPlaybackFileEvent.SEEK -> {}
+                Constant.PlayPlaybackFileEvent.SEEK -> {
+                    processSeekVideoInEmptyFile()
+                }
                 Constant.PlayPlaybackFileEvent.NEXT_FILE -> {}
                 Constant.PlayPlaybackFileEvent.SCAN_PREVIOUS -> {}
                 Constant.PlayPlaybackFileEvent.SCAN_NEXT -> {}
@@ -627,6 +641,29 @@ class MainViewModel : ViewModel()  {
         }
     }
 
+    private fun processSeekVideoInEmptyFile() {
+        if (emptyFileAllDay) {
+            setPlaybackStateUI(Constant.PlaybackSdCardStateUI.EMPTY_FILE_ALL_DAY)
+        } else {
+            scanPreviousDay()
+        }
+    }
+
+    private fun scanPreviousDay() {
+        _dateList.value?.let { dates ->
+            val indexDay = dates.indexOf(startTimeOfSelectedDay)
+            if (indexDay != 0) {
+                // Ngày hiện tại -> bắt đầu quét về quá khứ
+                startTimeOfSelectedDay = dates[indexDay - 1]
+                setEventToPlay(Constant.PlayPlaybackFileEvent.SCAN_PREVIOUS)
+                setPlaybackStateUI(Constant.PlaybackSdCardStateUI.SCAN)
+                //startQueryFileAfterScan()
+            }
+        }
+    }
+
+
+
 
     /**
      * Play video
@@ -639,9 +676,9 @@ class MainViewModel : ViewModel()  {
                 playLastFileInDay()
             }
 
-//            SEEK -> {
-//                processSeekVideo(seekTimeValue)
-//            }
+            Constant.PlayPlaybackFileEvent.SEEK -> {
+                processSeekVideo(seekTimeValue)
+            }
 //
 //            NOTIFICATION -> {
 //                processSeekVideo(seekTimeValue)
@@ -678,6 +715,120 @@ class MainViewModel : ViewModel()  {
             else -> {}
         }
     }
+
+    /**
+     * Xử lý thời gian tua video playback để lấy ra được file cần play
+     * Emit Triple<PlaybackFileModel, Int, Boolean>>
+     *     - PlaybackFileModel: file để play
+     *     - Int: Timestamp để bắt đầu play
+     *     - Boolean: Biến để quyết định next sang ngày mới hay play file cuối cùng của ngày
+     *          + true: Play file cuối cùng của ngày
+     *          + false: Next sang ngày mới gần nhất và play file đầu tiên của ngày đó
+     */
+    private fun processSeekVideo(seekTime: Long) {
+        compositeDisposable.add(
+            Single.create<Triple<PlaybackFileModel, Int, Boolean>> { emitter ->
+                val listPlaybackInDay = getListFilePlaybackInDay(startDay)
+                val seekTimeSecond = convertMillisToSecond(seekTime)
+                for (index in 0 until listPlaybackInDay.size) {
+                    val file = listPlaybackInDay[index]
+                    val startTime = file.timestamp
+                    val endTime = file.timestamp + file.duration
+                    if (convertMillisToSecond(seekTime) == convertMillisToSecond(
+                            getEndOfDay(
+                                startDay
+                            )
+                        )
+                    ) {
+                        // Nếu thời điểm seek là 23:59:59 thì next luôn sang ngày hôm sau
+                        emitter.onSuccess(
+                            Triple(file, startTime, false)
+                        )
+                        break
+                    } else if (index == 0 && seekTimeSecond < startTime) {
+                        // Nếu seekTime nhỏ hơn startTime của file đầu tiên trong danh sách
+                        // ==> Play file đầu tiên trong danh sách với seekTime là startTime của file
+                        if (eventToPlay == Constant.PlayPlaybackFileEvent.NOTIFICATION) setPlaybackStateUI(Constant.PlaybackSdCardStateUI.EMPTY_FILE_NOTIFICATION)
+                        emitter.onSuccess(
+                            Triple(file, startTime, true)
+                        )
+                        break
+                    } else if ((index == listPlaybackInDay.size - 1) && seekTimeSecond >= endTime) {
+                        // Nếu seekTime lớn hơn hoặc bằng endTime của file cuối cùng trong danh sách
+                        // TH1: Nếu đang trong event chọn ngày để xem playback hoặc đang đứng ở ngày hiện tại và seek qua file cuối cùng
+                        //      ==> Play file cuối cùng trong danh sách với seekTime là startTime của file
+                        // TH2: Các trường hợp còn lại, thì tự động next sang ngày tiếp theo và play file đầu tiên của ngày đó
+                        if (eventToPlay == Constant.PlayPlaybackFileEvent.NOTIFICATION) setPlaybackStateUI(Constant.PlaybackSdCardStateUI.EMPTY_FILE_NOTIFICATION)
+                        if (eventToPlay == Constant.PlayPlaybackFileEvent.SELECT_DAY || isDay) {
+                            emitter.onSuccess(
+                                Triple(file, startTime, true)
+                            )
+                        } else {
+                            emitter.onSuccess(
+                                Triple(file, startTime, eventToPlay == Constant.PlayPlaybackFileEvent.NOTIFICATION)
+                            )
+                        }
+                        break
+                    } else if (seekTimeSecond in startTime until endTime) {
+                        // Nếu seekTime nằm trong khoảng startTime và endTime của 1 file (>= startTime và < endTime)
+                        // ==> Play file đó với seekTime
+                        emitter.onSuccess(
+                            Triple(file, seekTimeSecond, true)
+                        )
+                        break
+                    } else {
+                        // Trường hợp tua đến thời điểm giữa 2 file nhưng thời điểm đó không có dữ liệu playback
+                        // ==> play file gần nhất của thời điểm seekTime
+                        if (index < listPlaybackInDay.size - 1) {
+                            val nextFile =
+                                listPlaybackInDay[index + 1]     // File kế tiếp của file hiện tại
+                            val startTimeNextFile = nextFile.timestamp
+
+                            if (seekTimeSecond in endTime..startTimeNextFile) {
+                                if (eventToPlay == Constant.PlayPlaybackFileEvent.NOTIFICATION) setPlaybackStateUI(Constant.PlaybackSdCardStateUI.EMPTY_FILE_NOTIFICATION)
+
+                                emitter.onSuccess(
+                                    Triple(nextFile, startTimeNextFile, true)
+                                )
+                                break
+                            }
+                        }
+                    }
+                }
+
+            }.subscribeOn(schedulerProvider.io())
+                .observeOn(schedulerProvider.ui())
+                .subscribe { dataPlay ->
+                    if (dataPlay.third) {
+                        // Play file cuối cùng của ngày
+                        playFileWithSeekEvent(
+                            dataPlay.first,
+                            dataPlay.second
+                        )
+                    } else {
+                        // Next sang ngày gần nhất và play file đầu tiên của ngày đó
+//                        scanNextDay()
+                    }
+                }
+        )
+    }
+
+    /**
+     * Play file trong trường hợp tua video bằng thanh timeline
+     */
+    private fun playFileWithSeekEvent(file: PlaybackFileModel, time: Int) {
+        if (isPlayLastFileComplete) {
+            isPlayLastFileComplete = false
+            setPlaybackStateUI(Constant.PlaybackSdCardStateUI.PLAYING)
+        }
+        currentFilePlay = file
+        playFile(file, time)
+    }
+
+    private fun convertMillisToSecond(time: Long): Int {
+        return TimeUnit.MILLISECONDS.toSeconds(time).toInt()
+    }
+
 
     fun setEventToPlay(event: Constant.PlayPlaybackFileEvent) {
         eventToPlay = event
@@ -720,6 +871,94 @@ class MainViewModel : ViewModel()  {
         return calendar.timeInMillis
     }
 
+    /**
+     * Bắt đầu tua
+     */
+    fun seekTimePlaybackFile() {
+        startSeekEvent = true
+        hasDataVideo = false
+        setEventToPlay(Constant.PlayPlaybackFileEvent.SEEK)
+        setPlaybackStateUI(Constant.PlaybackSdCardStateUI.SEEK)
+        resetPlaybackTime()
+    }
+
+    private fun resetPlaybackTime() {
+        _cursorTimebar.value = Pair(false, 0)
+    }
+
+
+    /**
+     * Bắt đầu quá trình seekvideo
+     *      - Nếu đang đứng ở ngày hiện tại và biến emptyFileAllDay = true thì query lên cam để lấy dữ liệu mới nhất
+     *      - Nếu tất cả các ngày không có dữ liệu thì show luôn thông báo
+     *      - Nếu đang phát playback thì stop lại video và đợi command start_stop để tiếp tục xử lý
+     *      - Nếu emptyFileAllDay = false, đứng ở ngày không có dữ liệu và seek:
+     *          + Đầu tiên phải quét đến tương lai và play file đầu tiên của ngày đó
+     *          + Nếu quét đến tương lai và không có ngày nào để play thì quét về quá khứ và play file cuối cùng của ngày đó
+     */
+    fun startSeekVideo() {
+        if (emptyFileAllDay) {
+            if (_dateList.value?.indexOf(startDay) == 30) {
+                // Nếu là ngày hiện tại thì query lên cam để lấy dữ liệu mới nhất
+                // ngày hiện tại là ngày có index = 30 trong dateList
+                getListVideoPlaybackFromCamera(startDay)
+            } else {
+                setPlaybackStateUI(Constant.PlaybackSdCardStateUI.EMPTY_FILE_ALL_DAY)
+            }
+        } else if (currentFilePlay?.name == Constant.EMPTY_STRING) {
+            // Nếu current file = EMPTY_STRING ==> Đang đứng ở ngày không có dữ liệu
+            scanFileAfterSeekEmptyDay()
+        } else {
+            if (isPaused) {
+                // Trong trường hợp video đã được pause rồi, thì gọi luôn hàm play với event là SEEK
+                playVideoPlayback(Constant.PlayPlaybackFileEvent.SEEK)
+            } else {
+                stopPlayback()
+            }
+        }
+    }
+
+    /**
+     * Stop playback
+     * @param byUser: true - người dùng chủ động stop playback bằng cách nhấn nút play/pause
+     *                false - tự động stop playback để next file, seek, next day
+     */
+    private fun stopPlayback(byUser: Boolean = false) {
+        compositeDisposable.add(
+            vnttCamManager.stopPlayback()
+                .subscribeOn(schedulerProvider.io())
+                .observeOn(schedulerProvider.ui())
+                .subscribe({
+                    if (!byUser) {
+                        resetPlaybackTime()
+                    }
+                }, {
+                })
+        )
+    }
+
+    /**
+     * Đứng ở ngày không có dữ liệu và seek
+     * - Đứng ở ngày hiện tại và ngày đó chưa có dữ liệu, khi seek file cần query lại ngày đó để lấy dữ liệu mới nhất
+     * - Quét đến tương lai, nếu tương lai không có dữ liệu thì quay về quá khứ
+     * - Khi quét đến tương lai, gặp ngày có dữ liệu thì dừng luôn và play file đầu tiên của ngày đó
+     * - Khi quét về quá khứ, gặp ngày có dữ liệu thì dừng luôn và play file cuối cùng của ngày đó
+     */
+    private fun scanFileAfterSeekEmptyDay() {
+        _dateList.value?.let { dates ->
+//            val indexDay = dates.indexOf(startDay)
+//
+//            if (indexDay != 30) {
+//                scanNextDay()
+//            } else {
+                // Nếu đang là ngày hiện tại -> seek file và cần query lấy data mới nhất
+                getListVideoPlaybackFromCamera(startDay)
+//            }
+        }
+
+    }
+
+
 
 
     /**
@@ -745,6 +984,77 @@ class MainViewModel : ViewModel()  {
         currentFilePlay?.let { file ->
             playFile(file, file.timestamp)
             Log.d("ducpa", "currentFilePlay: $currentFilePlay")
+        }
+    }
+
+    /**
+     * Xử lý quá trình next file khi đã play xong file hiện tại:
+     *      - Nếu file đang play là file cuối cùng:
+     *          + Nếu ngày đó là ngày cuối cùng trong danh sách 30 ngày query từ đầu --> Finish --> Kết thúc xem playback
+     *          + Nếu chưa là ngày cuối cùng: Thực hiện next sang ngày tiếp theo
+     *      - Nếu chưa phải là file cuối cùng: Thực hiện next sang file kế tiếp
+     *
+     * Emit ra giá trị Pair<PlaybackFileModel, Boolean>, trong đó biến boolean kiểm tra xem đó đã phải là file cuối cùng trong ngày hay chưa
+     */
+    private fun processNextFile() {
+        if (!isNextFile) {
+            isNextFile = true
+            startSeekEvent = true
+
+            compositeDisposable.add(
+                Single.create<Pair<PlaybackFileModel, Boolean>> { emitter ->
+                    val listPlaybackInDay = getListFilePlaybackInDay(startTimeOfSelectedDay)
+
+                    for (index in 0 until listPlaybackInDay.size) {
+                        val file = listPlaybackInDay[index]
+
+                        if (file.timestamp == currentFilePlay?.timestamp) {
+                            if (index == listPlaybackInDay.size - 1) {
+                                // File đang play là file cuối cùng
+                                emitter.onSuccess(Pair(currentFilePlay!!, true))
+                            } else {
+                                // Chưa phải là file cuối cùng: Thực hiện next sang file kế tiếp
+                                val nextFile = listPlaybackInDay[index + 1]
+                                emitter.onSuccess(Pair(nextFile, false))
+                                break
+                            }
+                        }
+                    }
+
+                }.subscribeOn(schedulerProvider.io())
+                    .observeOn(schedulerProvider.ui())
+                    .subscribe { data ->
+                        if (data.second) {
+                            // Nếu file đã là file cuối cùng trong ngày
+                            // --> Next sang ngày mới gần nhất và play file đầu tiên của ngày đó
+                            processNextDay()
+                        } else {
+                            // Update UI tương ứng với trạng thái next file
+                            setPlaybackStateUI(Constant.PlaybackSdCardStateUI.NEXT_FILE)
+
+                            currentFilePlay = data.first
+                            playVideoPlayback(Constant.PlayPlaybackFileEvent.NEXT_FILE)
+                        }
+                    }
+            )
+        }
+    }
+
+    /**
+     * Next sang ngày mới và play file đầu tiên của ngày đó
+     * Nếu đang đứng ở ngày hiện tại và đã play hết tất cả các file thì show luôn thông báo
+     */
+    private fun processNextDay() {
+        if (isDay) {
+            isNextFile = false
+            isPlayLastFileComplete = true
+            setPlaybackStateUI(Constant.PlaybackSdCardStateUI.COMPLETE)
+        } else {
+            startSeekEvent = true
+            hasDataVideo = false
+
+            setPlaybackStateUI(Constant.PlaybackSdCardStateUI.NEXT_DAY)
+            playVideoPlayback(Constant.PlayPlaybackFileEvent.NEXT_DAY)
         }
     }
 

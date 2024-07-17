@@ -50,7 +50,8 @@ class MainFragment : Fragment() {
             // Xử lý kết quả trên main thread
             Log.d("MainActivity", "Device: $device")
             binding.tvNameCamera.text = device.uid
-            binding.tvStatus.text = if (device.status == "0") "Online" else "Offline"
+            binding.tvStatus.text = if (device.status == "0") "Trực tuyến" else "Ngoại tuyến"
+            binding.tvPass.text = "02iRqCkk"
             mainViewModel.setDataCamera(device)
         })
 

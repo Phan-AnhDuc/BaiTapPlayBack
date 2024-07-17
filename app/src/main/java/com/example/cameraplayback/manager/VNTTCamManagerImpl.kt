@@ -86,6 +86,8 @@ class VNTTCamManagerImpl : VNTTCamManager, CameraCallback {
 
     private val commandGetSubject: PublishSubject<Triple<Constants.Command?, Int, String?>> by lazy { PublishSubject.create() }
 
+    private val stopPlayback: PublishSubject<Boolean> by lazy { PublishSubject.create() }
+
 
 
 
@@ -101,6 +103,10 @@ class VNTTCamManagerImpl : VNTTCamManager, CameraCallback {
 
     override fun initCallback() {
         camera.init(this)
+    }
+
+    override fun observeTimestampPlayback(): PublishSubject<Long> {
+        return playbackTimestamp
     }
 
     override fun playBackVideoStart(playbackFile: PlaybackFileModel, offset: Int): Single<Int> {
@@ -641,6 +647,13 @@ class VNTTCamManagerImpl : VNTTCamManager, CameraCallback {
                     Log.e("getCurrentFlipCamera","Get current flip camera failed: ${error.message}")
                 })
         )
+    }
+
+    override fun stopPlayback(): Single<Int> {
+        return Single.create { emitter ->
+            val result = camera.startStopPlayback(0)
+            emitter.onSuccess(result)
+        }
     }
 
     /**
