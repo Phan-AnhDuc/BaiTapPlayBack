@@ -10,10 +10,12 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.cameraplayback.databinding.FragmentPlaybackCameraBinding
 import com.example.cameraplayback.di.scheduler.SchedulerProviderImpl
 import com.example.cameraplayback.resource.ResourcesService
 import com.example.cameraplayback.resource.ResourcesServiceImpl
+import com.example.cameraplayback.ui.view.camera.view.fragment.adapter.DayPlaybackAdapter
 import com.example.cameraplayback.ui.view.camera.viewmodel.MainViewModel
 import com.example.cameraplayback.utils.Constant
 import com.example.cameraplayback.utils.Constant.ConfigCamera.VNPT_CAMERA_RECORD_RESOLUTION_FHD
@@ -28,6 +30,7 @@ import com.example.cameraplayback.utils.view.utils.ColorScaleForCameraSJ
 import com.vnpttech.opengl.MGLSurfaceView
 import vn.vnpt.ONEHome.di.component.scheduler.SchedulerProvider
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 // timeStamp 1720887363000; getStartOfDay(timeStamp) 1720803600000
 class PlaybackCameraFragment : Fragment(),
@@ -37,6 +40,7 @@ class PlaybackCameraFragment : Fragment(),
     private val binding get() = _binding!!
     private val mainViewModel: MainViewModel by viewModels()
     private var timeStamp = 1720823164000
+    lateinit var dayAdapter: DayPlaybackAdapter
 
     private var onTouchTimeBar: Boolean = false
 
@@ -87,6 +91,7 @@ class PlaybackCameraFragment : Fragment(),
 
             colorDataTimeline.observe(viewLifecycleOwner) { data ->
                 Log.d("ducpa", "nhay vao day $data")
+                binding.timeLinePlayback.setEnableView(1F,true)
                 binding.timeLinePlayback.setColorScale(
                     ColorScaleForCameraSJ(data)
                 )
@@ -159,7 +164,8 @@ class PlaybackCameraFragment : Fragment(),
             }
 
             Constant.PlaybackSdCardStateUI.SEEK -> {
-//                setViewSeekVideoPlayback()
+                Log.d("ducpa", "nhảy vào SEEK")
+               setViewSeekVideoPlayback()
             }
 
             Constant.PlaybackSdCardStateUI.NEXT_FILE -> {
@@ -207,6 +213,38 @@ class PlaybackCameraFragment : Fragment(),
     private fun View.show() {
         this.visibility = View.VISIBLE
     }
+
+    /**
+     * Set view khi playback ở trạng thái seek video
+     */
+    private fun setViewSeekVideoPlayback() {
+        Log.d("ducpa", "nhảy vào setViewSeekVideoPlayback")
+        updateControlView(false)
+        dayAdapter.setPickableDay(false)
+    }
+
+    /**
+     * Cập nhật trạng thái các button trên thanh điều khiển:
+     * Button play/pause, sound, screenshot, record, quality
+     */
+    private fun updateControlView(enable: Boolean) {
+        val alpha: Float = if (enable) 1F else 0.3F
+        Log.d("ducpa", "nhảy vào updateControlView")
+        binding.apply {
+//            ivPlay.setEnableView(alpha, enable)
+//            ivLandPlay.setEnableView(alpha, enable)
+//            ivReceiveAudio.setEnableView(alpha, enable)
+//            ivLandReceiveAudio.setEnableView(alpha, enable)
+//            ivScreenshot.setEnableView(alpha, enable)
+//            ivLandScreenshot.setEnableView(alpha, enable)
+//            ivRecordVideo.setEnableView(alpha, enable)
+//            ivLandRecordVideo.setEnableView(alpha, enable)
+//            tvChangeQualityVideo.setEnableView(alpha, enable)
+//            tvLandQualityVideo.setEnableView(alpha, enable)
+        }
+    }
+
+
 
     /**
      * Set quality value
@@ -263,6 +301,10 @@ class PlaybackCameraFragment : Fragment(),
 
     private fun onCommonViewLoaded() {
         initGlSurfaceView()
+        dayAdapter = DayPlaybackAdapter()
+        binding.recyclerView.apply {
+            adapter = dayAdapter
+        }
         setUpPeriodTimeForTimeline(timeStamp)
         mainViewModel.apply {
             if (timeStamp != 0L) {
@@ -329,8 +371,8 @@ class PlaybackCameraFragment : Fragment(),
     }
 
     override fun onEnd(cursorValue: Long) {
-        Log.d("ducpa", "onEnd: $onTouchTimeBar")
         if (onTouchTimeBar) {
+            Log.d("ducpa", "onEnd cursorValue: $cursorValue")
             mainViewModel.setTimeSeekValue(cursorValue)
             startCountdownSeekVideo()
         }
@@ -372,7 +414,7 @@ class PlaybackCameraFragment : Fragment(),
                 setTouchable(enable)
             }
 
-//            dayAdapter.setPickableDay(enable)
+          dayAdapter.setPickableDay(enable)
         }
     }
 

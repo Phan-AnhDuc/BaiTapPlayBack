@@ -18,12 +18,17 @@ class MainFragment : Fragment() {
     private val binding get() = _binding!!
     private val mainViewModel: MainViewModel by viewModels()
 
+    private lateinit var uid: String
+    private lateinit var password: String
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentMainBinding.inflate(inflater, container, false)
         mainViewModel.fetchDevice(193113)
+        uid = arguments?.getString("uid").toString()
+        password = arguments?.getString("password").toString()
         addViewListener()
         addObserver()
         onCommonViewLoaded()
@@ -40,8 +45,12 @@ class MainFragment : Fragment() {
     }
 
     private fun addViewListener() {
+        val bundle = Bundle().apply {
+            putString("uid", uid)
+            putString("password", password)
+        }
         binding.playback.setOnClickListener {
-            findNavController().navigate(R.id.action_mainFragment_to_playbackCameraFragment)
+            findNavController().navigate(R.id.action_mainFragment_to_playbackCameraFragment, bundle)
         }
     }
 
@@ -49,9 +58,9 @@ class MainFragment : Fragment() {
         mainViewModel.device.observe(viewLifecycleOwner, Observer { device ->
             // Xử lý kết quả trên main thread
             Log.d("MainActivity", "Device: $device")
-            binding.tvNameCamera.text = device.uid
+            binding.tvNameCamera.text = uid
             binding.tvStatus.text = if (device.status == "0") "Trực tuyến" else "Ngoại tuyến"
-            binding.tvPass.text = "02iRqCkk"
+            binding.tvPass.text = password
             mainViewModel.setDataCamera(device)
         })
 

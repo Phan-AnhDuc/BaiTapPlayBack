@@ -673,16 +673,18 @@ class MainViewModel : ViewModel()  {
         Log.d("ducpa", "event: $event")
         when (event) {
             Constant.PlayPlaybackFileEvent.FIRST_TIME -> {
+                Log.d("ducpa", "seekTimeValue FIRST_TIME: $seekTimeValue ")
                 playLastFileInDay()
             }
 
             Constant.PlayPlaybackFileEvent.SEEK -> {
+                Log.d("ducpa", "seekTimeValue SEEK: $seekTimeValue ")
                 processSeekVideo(seekTimeValue)
             }
 //
-//            NOTIFICATION -> {
-//                processSeekVideo(seekTimeValue)
-//            }
+            Constant.PlayPlaybackFileEvent.NOTIFICATION -> {
+                processSeekVideo(seekTimeValue)
+            }
 //            NEXT_FILE -> {
 //                // Stop phiên playback của file hiện tại --> đợi command SDK_START_STOP_PLAYBACK_COMMAND trả về và play file mới
 //                stopPlayback()
