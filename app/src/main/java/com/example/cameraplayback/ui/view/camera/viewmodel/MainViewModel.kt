@@ -27,6 +27,7 @@ import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -50,7 +51,7 @@ class MainViewModel : ViewModel()  {
 
     private var isNextFile: Boolean = false
 
-    private var uidCam = "VNTTA-017631-MVEGE"
+    private var uidCam = ""
 
     private var passCam = Constant.EMPTY_STRING
 
@@ -82,7 +83,7 @@ class MainViewModel : ViewModel()  {
     private val _cameraInfo: MutableLiveData<DeviceInfo> by lazy { MutableLiveData() }
     val cameraInfo: LiveData<DeviceInfo> get() = _cameraInfo
 
-    var startDay = 1720823164000
+    var startDay = 1721613779000
 
     private var disposableVideoStream: Disposable? = null
 
@@ -181,19 +182,19 @@ class MainViewModel : ViewModel()  {
 //        setCameraDevice(camera)
     }
 
-    /**
-     * Trường hợp app ở trạng thái onResume (vào app lần đầu sẽ không chạy hàm này)
-     * 1. Nếu trong Session manager đã tồn tại cam, tiếp tục play file playback
-     * 2. Nếu Session đã bị disconnect, thì connect lại camera
-     */
-    fun reconnectCameraAgain() {
-        if (!SessionCameraManager.isSessionExist(uidCam)) {
-//            isReconnect = true
-            hasDataVideo = false
-            startSeekEvent = false
-            connectCameraWithNewSession(idCam, uidCam, passCam)
-        }
-    }
+//    /**
+//     * Trường hợp app ở trạng thái onResume (vào app lần đầu sẽ không chạy hàm này)
+//     * 1. Nếu trong Session manager đã tồn tại cam, tiếp tục play file playback
+//     * 2. Nếu Session đã bị disconnect, thì connect lại camera
+//     */
+//    fun reconnectCameraAgain() {
+//        if (!SessionCameraManager.isSessionExist(uidCam)) {
+////            isReconnect = true
+//            hasDataVideo = false
+//            startSeekEvent = false
+//            connectCameraWithNewSession(idCam, uidCam, passCam)
+//        }
+//    }
 
     /**
      * Set playback mode
@@ -213,11 +214,11 @@ class MainViewModel : ViewModel()  {
      */
     private fun initializeCameraManager(id: Int, uid: String, pass: String) {
         if (SessionCameraManager.isSessionExist(uid)) {
-            SessionCameraManager.getCameraManagerByUID("VNTTA-017631-MVEGE")?.let { camManager ->
+            SessionCameraManager.getCameraManagerByUID(uid)?.let { camManager ->
                 vnttCamManager = camManager
             }
         } else {
-            connectCameraWithNewSession(id, "VNTTA-017631-MVEGE", "02iRqCkk")
+            connectCameraWithNewSession(id, uid, "qsL6eC8n")
         }
 
         observeCameraState()
@@ -479,10 +480,109 @@ class MainViewModel : ViewModel()  {
                 .subscribe { commandSet ->
                     commandSet?.first?.let { command ->
                         val status = commandSet.second
-//                        setStateByCommandSet(command, status)
+                       setStateByCommandSet(command, status)
                     }
                 }
         )
+    }
+
+
+    /**
+     * Set các state tương ứng với từng commandset
+     */
+    private fun setStateByCommandSet(command: Constants.Command, status: Int) {
+        if (isCancelledPlayback) return
+
+        when (command) {
+            Constants.Command.SDK_PLAY_SD_VIDEO_COMMAND -> {
+                if (status == 0) {
+                    when (eventToPlay) {
+                        Constant.PlayPlaybackFileEvent.SEEK -> {
+                            // Khi tua video, sẽ có những trường hợp bị cache data của file cũ,
+                            // Vì vậy cần delay để đảm bảo data nhận được là mới nhất tại thời điểm tua
+                            delayFunction(1000) {
+                                startSeekEvent = false
+                            }
+                        }
+
+                        Constant.PlayPlaybackFileEvent.PAUSE,
+                        Constant.PlayPlaybackFileEvent.NEXT_FILE,
+                        Constant.PlayPlaybackFileEvent.SELECT_DAY,
+                        Constant.PlayPlaybackFileEvent.SCAN_NEXT,
+                        Constant.PlayPlaybackFileEvent.NEXT_DAY,
+                        Constant.PlayPlaybackFileEvent.NOTIFICATION,
+                        Constant.PlayPlaybackFileEvent.SCAN_PREVIOUS -> {
+                            delayFunction(1000) {
+                                hasDataVideo = false
+                                startSeekEvent = false
+                            }
+                        }
+
+                        else -> {}
+                    }
+                } else {
+                    setCameraState(Constant.CameraState.CameraOffline)
+//                    disconnectAndRemoveCameraFromListSession()
+                }
+            }
+
+            Constants.Command.SDK_START_STOP_PLAYBACK_COMMAND -> {
+                if (status == 0) {
+                    when (eventToPlay) {
+                        Constant.PlayPlaybackFileEvent.SEEK -> {
+                            // Đợi SDK_START_STOP_PLAYBACK_COMMAND sau đó mới play file
+                            playVideoPlayback(Constant.PlayPlaybackFileEvent.SEEK)
+                        }
+
+                        Constant.PlayPlaybackFileEvent.NEXT_FILE -> {
+                            isNextFile = false
+                            playFileWithNextFileEvent(currentFilePlay)
+                        }
+
+                        Constant.PlayPlaybackFileEvent.SELECT_DAY -> {
+//                            getListVideoPlaybackWhenSelectDayEvent()
+                        }
+
+                        Constant.PlayPlaybackFileEvent.NEXT_DAY -> {
+                            isNextFile = false
+//                            scanNextDay()
+                        }
+
+                        Constant.PlayPlaybackFileEvent.PAUSE -> {
+                            isPaused = true
+                            setPlaybackStateUI(Constant.PlaybackSdCardStateUI.PAUSED)
+                        }
+
+//
+//                        NOTIFICATION -> {
+//                            getListVideoPlaybackWhenSelectDayEvent()
+//                        }
+
+                        else -> {}
+                    }
+                } else {
+                    setCameraState(Constant.CameraState.CameraOffline)
+                }
+            }
+
+            else -> {}
+        }
+    }
+
+    fun delayFunction(timeDelay: Long, function: () -> Unit) {
+        CoroutineScope(Dispatchers.Main).launch {
+            delay(timeMillis = timeDelay)
+            function.invoke()
+        }
+    }
+
+    /**
+     * Play file playback với event next file
+     */
+    private fun playFileWithNextFileEvent(file: PlaybackFileModel?) {
+        file?.let {
+            playFile(it, it.timestamp)
+        }
     }
 
 
@@ -527,7 +627,7 @@ class MainViewModel : ViewModel()  {
     private fun getIdCamera(camera: Device) {
         camera.id?.let { idCam = it }
         camera.uid?.let { uidCam = "VNTTA-017631-MVEGE" }
-        decryptPassword(camera)?.let { passCam = "02iRqCkk" }
+        decryptPassword(camera)?.let { passCam = "qsL6eC8n" }
     }
 
     private fun decryptPassword(camera: Device): String? {
@@ -629,7 +729,16 @@ class MainViewModel : ViewModel()  {
                 Constant.PlayPlaybackFileEvent.SCAN_NEXT -> {}
                 Constant.PlayPlaybackFileEvent.NEXT_DAY -> {}
                 Constant.PlayPlaybackFileEvent.PAUSE -> {}
-                Constant.PlayPlaybackFileEvent.NOTIFICATION -> {}
+                Constant.PlayPlaybackFileEvent.NOTIFICATION -> {
+                    val sdCardAvailable = _cameraInfo.value?.sdCardInfo?.total
+                    if (sdCardAvailable != null && sdCardAvailable > 0) {
+                        emptyFileAllDay = false
+                    } else {
+                        //Thẻ nhớ trống gán = true để khi select ngày khác không bị vào hàm stop playback sẽ chết camera
+                        isPaused = true
+                    }
+                    _playbackState.value = Constant.PlaybackSdCardStateUI.EMPTY_FILE_NOTIFICATION
+                }
             }
 
         } else {
@@ -683,12 +792,13 @@ class MainViewModel : ViewModel()  {
             }
 //
             Constant.PlayPlaybackFileEvent.NOTIFICATION -> {
+                Log.d("ducpa", "seekTimeValue NOTIFICATION: $seekTimeValue ")
                 processSeekVideo(seekTimeValue)
             }
-//            NEXT_FILE -> {
-//                // Stop phiên playback của file hiện tại --> đợi command SDK_START_STOP_PLAYBACK_COMMAND trả về và play file mới
-//                stopPlayback()
-//            }
+            Constant.PlayPlaybackFileEvent.NEXT_FILE -> {
+                // Stop phiên playback của file hiện tại --> đợi command SDK_START_STOP_PLAYBACK_COMMAND trả về và play file mới
+                stopPlayback()
+            }
 //
 //            SELECT_DAY -> {
 //                // Chọn ngày xem playback: Sẽ focus vào thời điểm giữa ngày (12h)
@@ -774,6 +884,7 @@ class MainViewModel : ViewModel()  {
                     } else if (seekTimeSecond in startTime until endTime) {
                         // Nếu seekTime nằm trong khoảng startTime và endTime của 1 file (>= startTime và < endTime)
                         // ==> Play file đó với seekTime
+                        Log.d("ducpa", "seekTime nằm trong khoảng startTime và endTime của 1 file")
                         emitter.onSuccess(
                             Triple(file, seekTimeSecond, true)
                         )
@@ -787,6 +898,7 @@ class MainViewModel : ViewModel()  {
                             val startTimeNextFile = nextFile.timestamp
 
                             if (seekTimeSecond in endTime..startTimeNextFile) {
+                                Log.d("ducpa", "tua đến thời điểm giữa 2 file nhưng thời điểm đó không có dữ liệu playback")
                                 if (eventToPlay == Constant.PlayPlaybackFileEvent.NOTIFICATION) setPlaybackStateUI(Constant.PlaybackSdCardStateUI.EMPTY_FILE_NOTIFICATION)
 
                                 emitter.onSuccess(
@@ -802,6 +914,7 @@ class MainViewModel : ViewModel()  {
                 .observeOn(schedulerProvider.ui())
                 .subscribe { dataPlay ->
                     if (dataPlay.third) {
+                        Log.d("ducpa", "processSeekVideo: ")
                         // Play file cuối cùng của ngày
                         playFileWithSeekEvent(
                             dataPlay.first,
@@ -957,7 +1070,6 @@ class MainViewModel : ViewModel()  {
                 getListVideoPlaybackFromCamera(startDay)
 //            }
         }
-
     }
 
 

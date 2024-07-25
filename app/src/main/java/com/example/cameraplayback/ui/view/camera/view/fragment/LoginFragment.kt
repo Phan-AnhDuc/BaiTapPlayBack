@@ -21,8 +21,9 @@ class LoginFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentLoginBinding.inflate(inflater, container, false)
+        binding.uid.text = Editable.Factory.getInstance().newEditable("VNTTA-017631-MVEGE")
+        binding.password.text = Editable.Factory.getInstance().newEditable("qsL6eC8n")
         binding.buttonLogin.setOnClickListener {
-
             val uid = binding.uid.text.toString()
             val password = binding.password.text.toString()
             val bundle = Bundle().apply {
@@ -31,8 +32,7 @@ class LoginFragment : Fragment() {
             }
             findNavController().navigate(R.id.action_login_to_mainFragment, bundle)
         }
-        binding.uid.text = Editable.Factory.getInstance().newEditable("VNTTA-017631-MVEGE")
-        binding.password.text = Editable.Factory.getInstance().newEditable("02iRqCkk")
+
 
         return binding.root
     }

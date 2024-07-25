@@ -39,7 +39,7 @@ class PlaybackCameraFragment : Fragment(),
     private var _binding: FragmentPlaybackCameraBinding? = null
     private val binding get() = _binding!!
     private val mainViewModel: MainViewModel by viewModels()
-    private var timeStamp = 1720823164000
+    private var timeStamp = 1721613779000
     lateinit var dayAdapter: DayPlaybackAdapter
 
     private var onTouchTimeBar: Boolean = false
@@ -55,10 +55,13 @@ class PlaybackCameraFragment : Fragment(),
         binding.apply {
             timeLinePlayback.setOnCursorListener(this@PlaybackCameraFragment)
         }
+
+
         addObserver()
         onCommonViewLoaded()
         return binding.root
     }
+
 
     private fun addObserver() {
 
@@ -149,10 +152,11 @@ class PlaybackCameraFragment : Fragment(),
         when (state) {
             Constant.PlaybackSdCardStateUI.PLAYING -> {
                 setViewPlayingPlayback()
+                showLoading(false)
             }
 
             Constant.PlaybackSdCardStateUI.CONTINUE_PLAY -> {
-//                setViewPlayingPlayback()
+               setViewPlayingPlayback()
             }
 
             Constant.PlaybackSdCardStateUI.PAUSING -> {
@@ -164,12 +168,12 @@ class PlaybackCameraFragment : Fragment(),
             }
 
             Constant.PlaybackSdCardStateUI.SEEK -> {
-                Log.d("ducpa", "nhảy vào SEEK")
                setViewSeekVideoPlayback()
+                showLoading(true)
             }
 
             Constant.PlaybackSdCardStateUI.NEXT_FILE -> {
-//                setViewNextFilePlayback()
+                setViewNextFilePlayback()
             }
 
             Constant.PlaybackSdCardStateUI.SELECT_DAY -> {
@@ -199,6 +203,15 @@ class PlaybackCameraFragment : Fragment(),
 //                setViewEmptyFilePlaybackNotification()
             }
         }
+    }
+
+    /**
+     * Set view khi playback ở trạng thái next file
+     */
+    private fun setViewNextFilePlayback() {
+        showLoading(true)
+        updateControlView(false)
+        updateTimebarView(false)
     }
 
     /**
@@ -307,9 +320,16 @@ class PlaybackCameraFragment : Fragment(),
         }
         setUpPeriodTimeForTimeline(timeStamp)
         mainViewModel.apply {
-            if (timeStamp != 0L) {
+            if (timeStamp != null && timeStamp != 0L) {
+                Log.d("ducpa", "vào event NOTIFICATION")
                 //Trỏ đến nơi phát hiện chuyển động
+                setEventToPlay(Constant.PlayPlaybackFileEvent.NOTIFICATION)
                 setTimeSeekValue(timeStamp)
+            } else {
+                Log.d("ducpa", "Vào playback lần đầu")
+                //Vào playback lần đầu
+                setEventToPlay(Constant.PlayPlaybackFileEvent.FIRST_TIME)
+                setUpPeriodTimeForTimeline(firstTimeComeIn)
             }
 
             prepareAndInitializeCamera(getDataCamera())
@@ -359,6 +379,7 @@ class PlaybackCameraFragment : Fragment(),
 
     override fun onStart(cursorValue: Long) {
         Log.d("ducpa", "onStart: $onTouchTimeBar")
+        Log.d("ducpa", "nhảy vào onStart")
         if (!onTouchTimeBar) {
             onTouchTimeBar = true
             mainViewModel.seekTimePlaybackFile()
@@ -371,8 +392,9 @@ class PlaybackCameraFragment : Fragment(),
     }
 
     override fun onEnd(cursorValue: Long) {
+        Log.d("ducpa", "onEnd cursorValue: $cursorValue")
+        Log.d("ducpa", "nhảy vào onEnd")
         if (onTouchTimeBar) {
-            Log.d("ducpa", "onEnd cursorValue: $cursorValue")
             mainViewModel.setTimeSeekValue(cursorValue)
             startCountdownSeekVideo()
         }
@@ -392,6 +414,7 @@ class PlaybackCameraFragment : Fragment(),
             onTouchTimeBar = false
             updateViewStartSeekVideoPlayback()
             mainViewModel.startSeekVideo()
+            showLoading(false)
         }
     }
 
@@ -399,6 +422,7 @@ class PlaybackCameraFragment : Fragment(),
      * Cập nhật view khi bắt đầu quá trình seek video playback
      */
     private fun updateViewStartSeekVideoPlayback() {
+        showLoading(true)
         updateTimebarView(false)
     }
 
@@ -406,22 +430,26 @@ class PlaybackCameraFragment : Fragment(),
      * Cập nhật view của thanh giời gian (timeline), thanh chọn ngày, textview chọn ngày xem playback
      */
     private fun updateTimebarView(enable: Boolean) {
-        val alpha: Float = if (enable) 1F else 0.3F
 
         binding.apply {
             timeLinePlayback.apply {
-                setEnableView(alpha, enable)
-                setTouchable(enable)
+                setEnableView(1F, true)
+                setTouchable(true)
             }
+            recyclerView.setEnableView(1F, true)
 
           dayAdapter.setPickableDay(enable)
         }
     }
 
-    fun View.setEnableView(alphaValue: Float, isEnable: Boolean) {
+    private fun View.setEnableView(alphaValue: Float, isEnable: Boolean) {
         isEnabled = isEnable
         alpha = if (!isEnable) alphaValue else 1.0F
         isClickable = isEnable
+    }
+
+    private fun showLoading(enable: Boolean) {
+        binding.ivLoading.visibility = if (enable) View.VISIBLE else View.GONE
     }
 }
 

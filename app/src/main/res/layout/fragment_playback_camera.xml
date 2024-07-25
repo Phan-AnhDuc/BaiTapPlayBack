@@ -49,13 +49,24 @@
                 </LinearLayout>
             </ScrollView>
         </LinearLayout>
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/iv_loading"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            app:layout_constraintBottom_toBottomOf="@+id/layout_wrap_glsurfaceview"
+            app:layout_constraintLeft_toLeftOf="@id/layout_wrap_glsurfaceview"
+            app:layout_constraintRight_toRightOf="@id/layout_wrap_glsurfaceview"
+            app:layout_constraintTop_toTopOf="@id/layout_wrap_glsurfaceview"
+            app:lottie_autoPlay="true"
+            app:lottie_fileName="animation/camera_loading.json"
+            app:lottie_loop="true" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <com.example.cameraplayback.utils.view.VideoTimeBarForCameraSJ
         android:id="@+id/time_line_playback"
         android:layout_width="0dp"
         android:layout_height="70dp"
-        android:layout_marginTop="30dp"
+        android:layout_marginTop="12dp"
         android:alpha="0.3"
         android:clickable="false"
         android:background="@color/grey_bright"
@@ -64,10 +75,12 @@
         app:cursorLineColor="@color/orange"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cl_video"
+        app:layout_constraintTop_toBottomOf="@id/recyclerView"
         app:showCursorLine="true"
         app:tickColor="@color/black"
         app:tickValueColor="@color/black"/>
+
+
 
     <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/tv_current_day"
