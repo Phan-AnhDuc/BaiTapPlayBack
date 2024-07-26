@@ -93,7 +93,7 @@ class VNTTCamManagerImpl : VNTTCamManager, CameraCallback {
 
     override fun createCameraManager(uid: String, pass: String) {
         if (!::camera.isInitialized) {
-            camera = VNPTCamera("VNTTA-017631-MVEGE", pass)
+            camera = VNPTCamera(uid, pass)
         }
     }
 
@@ -619,7 +619,7 @@ class VNTTCamManagerImpl : VNTTCamManager, CameraCallback {
         return stateCameraSubject
     }
 
-    override fun getCameraUID(): String = "VNTTA-017631-MVEGE"
+    override fun getCameraUID(): String = camera.getCameraUID()
 
     override fun receiveAudio(enable: Boolean): Int {
         if (checkCameraInitialize()) return camera.setAudio(enable)

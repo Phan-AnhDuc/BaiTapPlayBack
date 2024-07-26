@@ -175,9 +175,9 @@ class MainViewModel : ViewModel()  {
      * 4. Set camera live data value
      */
 
-    fun prepareAndInitializeCamera(camera: Device) {
+    fun prepareAndInitializeCamera(camera: Device, uid: String) {
         getIdCamera(camera)
-        initializeCameraManager(idCam, camera.name.toString(), passCam)
+        initializeCameraManager(idCam, uid, passCam)
         setPlaybackMode()
 //        setCameraDevice(camera)
     }
@@ -626,7 +626,7 @@ class MainViewModel : ViewModel()  {
      */
     private fun getIdCamera(camera: Device) {
         camera.id?.let { idCam = it }
-        camera.uid?.let { uidCam = "VNTTA-017631-MVEGE" }
+        camera.uid?.let { uidCam = it }
         decryptPassword(camera)?.let { passCam = "qsL6eC8n" }
     }
 
@@ -639,7 +639,7 @@ class MainViewModel : ViewModel()  {
 
 
     fun getDataCamera() : Device {
-        return devicesCamera ?: Device(name = "Camera")
+        return devicesCamera ?: Device()
     }
 
     fun prepareAndSetUpCamera() {

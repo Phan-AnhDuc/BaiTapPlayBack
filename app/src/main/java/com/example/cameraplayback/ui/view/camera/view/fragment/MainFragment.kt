@@ -59,8 +59,7 @@ class MainFragment : Fragment() {
         }
         binding.playback.setOnClickListener {
             Log.d("ducpa", "${decrypt("pGq4mIuuMQikINtDNYN2YA==")}")
-           findNavController().navigate(R.id.action_mainFragment_to_playbackCameraFragment, bundle)
-
+            findNavController().navigate(R.id.action_mainFragment_to_playbackCameraFragment, bundle)
         }
     }
 
@@ -69,7 +68,7 @@ class MainFragment : Fragment() {
             // Xử lý kết quả trên main thread
             Log.d("MainActivity", "Device: $device")
             binding.tvNameCamera.text = uid
-            binding.tvStatus.text = if (device.status == "0") "Trực tuyến" else "Ngoại tuyến"
+            binding.tvStatus.text = if (device.status == "0" && uid == "VNTTA-017631-MVEGE") "Trực tuyến" else "-----"
             binding.tvPass.text = password
             mainViewModel.setDataCamera(device)
         })

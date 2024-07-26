@@ -44,6 +44,9 @@ class PlaybackCameraFragment : Fragment(),
 
     private var onTouchTimeBar: Boolean = false
 
+    private lateinit var uid: String
+    private lateinit var password: String
+
 
 
 
@@ -55,6 +58,9 @@ class PlaybackCameraFragment : Fragment(),
         binding.apply {
             timeLinePlayback.setOnCursorListener(this@PlaybackCameraFragment)
         }
+
+        uid = arguments?.getString("uid").toString()
+        password = arguments?.getString("password").toString()
 
 
         addObserver()
@@ -332,7 +338,7 @@ class PlaybackCameraFragment : Fragment(),
                 setUpPeriodTimeForTimeline(firstTimeComeIn)
             }
 
-            prepareAndInitializeCamera(getDataCamera())
+            prepareAndInitializeCamera(getDataCamera(),uid)
 
             val a: SchedulerProvider = SchedulerProviderImpl()
             val b: ResourcesService  = ResourcesServiceImpl(requireContext())
